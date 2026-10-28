@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="21K Plan">
+<title>Half Marathon Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f4f1; --card:#ffffff; --ink:#15171c; --muted:#6b6f78; --line:#e4e4df;
+  --accent:#d6336c; --accent-ink:#fff; --ok:#2f9e6b; --warn:#d99a1e; --bad:#d64545;
+  --chip:#efeee9; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --card:#181b21; --ink:#eceef2; --muted:#9298a3; --line:#262a33;
+    --accent:#f2559a; --chip:#20242c; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --card:#181b21; --ink:#eceef2; --muted:#9298a3; --line:#262a33;
+  --accent:#f2559a; --chip:#20242c; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) 0 calc(76px + env(safe-area-inset-bottom))}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+header{padding:22px 0 8px}
+header .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header h1{margin:4px 0 0;font-size:28px;letter-spacing:-.02em}
+header h1 span{color:var(--accent)}
+
+.hero{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px;box-shadow:var(--shadow)}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.big{font-size:40px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.big small{font-size:15px;color:var(--muted);font-weight:500;margin-left:4px}
+.bar{height:8px;background:var(--chip);border-radius:99px;margin:14px 0 12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--chip);border-radius:12px;padding:10px}
+.stat b{display:block;font-size:17px}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+.next{margin-top:12px;border-radius:14px;padding:14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.next .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;font-weight:600}
+.next .t{font-size:17px;font-weight:600;margin-top:2px}
+.next .d{font-size:13px;opacity:.9;margin-top:2px}
+
+.week{margin-top:22px}
+.week h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;display:flex;justify-content:space-between}
+.week h2 em{font-style:normal;color:var(--ink);text-transform:none;letter-spacing:0}
+.sess{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.sess:active{transform:scale(.99)}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;color:#fff}
+.sess.done .dot{background:var(--ok);border-color:var(--ok)}
+.sess.skipped .dot{background:var(--muted);border-color:var(--muted)}
+.sess.today{border-color:var(--accent)}
+.sess .body{flex:1;min-width:0}
+.sess .t{font-weight:600;font-size:15px}
+.sess .s{font-size:13px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess .r{text-align:right;font-size:12px;color:var(--muted)}
+.sess .r b{display:block;color:var(--ink);font-size:14px}
+.flag{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle}
+
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:6px;z-index:5}
+nav button{flex:1;max-width:180px;background:none;border:0;color:var(--muted);font:600 13px Inter,sans-serif;padding:10px;border-radius:10px;cursor:pointer}
+nav button.on{background:var(--chip);color:var(--ink)}
+
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px;font-size:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:9px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+.note{font-size:13px;color:var(--muted);line-height:1.5}
+.warnbox{border-left:3px solid var(--bad);padding:10px 12px;background:var(--chip);border-radius:8px;font-size:13px;line-height:1.5;margin-top:10px}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--card);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform .25s ease;z-index:11;padding:8px 0 calc(16px + env(safe-area-inset-bottom))}
+.sheet.on{transform:none}
+.grab{width:40px;height:4px;background:var(--line);border-radius:4px;margin:4px auto 10px}
+.sheet h3{margin:0;font-size:20px}
+.sheet .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.steps{margin:14px 0;padding:0;list-style:none}
+.steps li{padding:9px 12px;background:var(--chip);border-radius:10px;margin-bottom:6px;font-size:14px}
+.steps li b{color:var(--accent)}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,textarea,select{width:100%;font:500 16px Inter,sans-serif;color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:10px;padding:11px 12px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:70px;resize:vertical}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:44px;padding:10px 6px;border-radius:10px;border:1px solid var(--line);background:none;color:var(--ink);font:600 14px Inter,sans-serif;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pace{margin-top:10px;font-size:14px;color:var(--muted)}
+.pace b{color:var(--ink)}
+.actions{display:flex;gap:8px;margin-top:18px}
+.btn{flex:1;padding:14px;border-radius:12px;border:0;font:600 15px Inter,sans-serif;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn.small{flex:none;padding:10px 14px;font-size:14px}
+.kmh{color:var(--muted);font-weight:500;font-size:.9em;white-space:nowrap}
+.next .kmh{color:inherit;opacity:.85}
+.steps .kmh{font-weight:500}
+.conv{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end}
+.conv .eq{padding-bottom:12px;color:var(--muted);font-weight:600}
+.painwarn{display:none}
+.painwarn.on{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">4-week plan · goal 1:55:00</div>
+    <h1>Half Marathon <span>Tracker</span></h1>
+  </header>
+
+  <section class="panel on" id="p-plan">
+    <div class="hero">
+      <div class="hero-top">
+        <div><div class="big" id="doneCount">0<small>/ 19</small></div><div class="note">sessions completed</div></div>
+        <div style="text-align:right"><div class="note">Race day</div><b id="raceDate"></b></div>
+      </div>
+      <div class="bar"><i id="bar" style="width:0"></i></div>
+      <div class="stats">
+        <div class="stat"><b id="sKm" class="mono">0.0</b><span>km logged</span></div>
+        <div class="stat"><b id="sLong" class="mono">–</b><span>longest run</span></div>
+        <div class="stat"><b id="sDays" class="mono">–</b><span>days to race</span></div>
+      </div>
+      <div class="next" id="next"></div>
+    </div>
+    <div id="weeks"></div>
+  </section>
+
+  <section class="panel" id="p-guide">
+    <div class="card">
+      <h3>Pace ↔ speed</h3>
+      <p class="note">Type either one, the other fills in. Handy for the treadmill.</p>
+      <div class="conv">
+        <div><label class="f">Pace (min/km)</label><input id="cPace" class="mono" inputmode="numeric" placeholder="5:00"></div>
+        <div class="eq">=</div>
+        <div><label class="f">Speed (km/h)</label><input id="cKmh" class="mono" inputmode="decimal" placeholder="12.0"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Pace guide</h3>
+      <table>
+        <tr><th>Run type</th><th>Pace /km</th><th>Effort</th></tr>
+        <tr><td>Easy / recovery</td><td class="mono">6:30–7:10</td><td>Conversational</td></tr>
+        <tr><td>Long run</td><td class="mono">6:25–7:00</td><td>Easy, controlled</td></tr>
+        <tr><td>Steady</td><td class="mono">5:45–6:05</td><td>Moderate, smooth</td></tr>
+        <tr><td>Tempo</td><td class="mono">5:10–5:25</td><td>Comfortably hard</td></tr>
+        <tr><td>Hard reps</td><td class="mono">4:50–5:05</td><td>Hard, controlled</td></tr>
+        <tr><td>Goal half</td><td class="mono">5:27</td><td>Race effort</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Race-day pacing</h3>
+      <table>
+        <tr><th>Km</th><th>Pace</th><th>Split at end</th></tr>
+        <tr><td>1–3</td><td class="mono">5:35</td><td class="mono">16:45</td></tr>
+        <tr><td>4–18</td><td class="mono">5:25</td><td class="mono">1:38:00</td></tr>
+        <tr><td>19–21.1</td><td class="mono">5:15–5:25</td><td class="mono">≈ 1:54:30</td></tr>
+      </table>
+      <p class="note" style="margin-top:10px">Start a touch slow, settle into goal pace, and only push in the last 3 km if you still feel strong. Take water at the stations.</p>
+    </div>
+    <div class="card">
+      <h3>Strength & safety</h3>
+      <p class="note">This plan squeezes 5 weeks into 4, so recovery matters. Keep strength sessions light the day before hard runs, and skip heavy legs before the long run.</p>
+      <div class="warnbox">If you feel sharp pain, stop the session. Don't run the next sessions until it's checked and you can walk normally without pain.</div>
+      <p class="note" style="margin-top:10px">Paces are based on the 1:55 goal. If easy runs feel hard, slow down. Easy days should feel easy.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="p-settings">
+    <div class="card">
+      <h3>Plan start</h3>
+      <p class="note">Pick the Monday of Week 1. The days shown are only suggestions, spaced so hard runs aren't back to back. Do the sessions on any day that suits you, just try to keep them in order within the week. Race day is Sunday of Week 4.</p>
+      <label class="f">Week 1 Monday</label>
+      <input type="date" id="startInput">
+      <label class="f">Race date</label>
+      <input type="date" id="raceInput">
+    </div>
+    <div class="card">
+      <h3>Level</h3>
+      <p class="note">The program has two versions of the workouts and long runs. Beginner uses the (B) sessions and Intermediate uses the (I) ones.</p>
+      <div class="seg" id="levelSeg">
+        <button data-v="B">Beginner</button><button data-v="I">Intermediate</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Theme</h3>
+      <div class="seg" id="themeSeg">
+        <button data-v="auto">Auto</button><button data-v="light">Light</button><button data-v="dark">Dark</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Backup</h3>
+      <p class="note">Your log is saved on this device's browser. Export a backup now and then, or to move it to another phone.</p>
+      <div class="actions">
+        <button class="btn ghost" id="exportBtn">Export</button>
+        <button class="btn ghost" id="importBtn">Import</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" hidden>
+      <div class="actions"><button class="btn ghost" id="resetBtn" style="color:var(--bad)">Reset all logs</button></div>
+    </div>
+  </section>
+</div>
+
+<nav>
+  <button class="on" data-p="plan">Plan</button>
+  <button data-p="guide">Guide</button>
+  <button data-p="settings">Settings</button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="wrap" id="sheetBody"></div></div>
+
+<script>
+const E="<b>6:30–7:10</b>", WU="Warm-up: 10–15 min @ "+E, CD="Cool-down: 10 min easy", REC="Recovery: 2 min easy jog between reps";
+const PLAN = [
+ {w:1,title:"Peak week",s:[
+  {id:"w1e1",day:0,type:"Easy run",short:"50 min easy @ 6:30–7:10",steps:["50 min @ "+E+", conversational effort"]},
+  {id:"w1x",day:1,type:"Strength",kind:"strength",short:"Functional CrossFit",steps:["Box jumps","Row","Sit-ups","Keep legs fresh for tomorrow's hard session"]},
+  {id:"w1i",day:2,type:"Intervals",short:"5 × 1 km @ 4:50–5:05",steps:[WU,"5 × 1 km @ <b>4:50–5:05</b>",REC,CD],
+   b:{short:"6 × 2 min hard @ 4:50–5:05",steps:[WU,"6 × 2 min @ <b>4:50–5:05</b>",REC,CD]}},
+  {id:"w1e2",day:4,type:"Easy run",short:"40 min easy @ 6:30–7:10",steps:["40 min @ "+E+", conversational effort"]},
+  {id:"w1l",day:6,type:"Long run",km:18,short:"18 km @ 6:25–7:00",steps:["18 km @ <b>6:25–7:00</b>","Longest run of the plan. Stay easy, drink and fuel on the way"],
+   b:{km:15,short:"15 km @ 6:25–7:00",steps:["15 km @ <b>6:25–7:00</b>","Longest run of the plan. Stay easy, drink and fuel on the way"]}}]},
+ {w:2,title:"Begin taper",s:[
+  {id:"w2x",day:0,type:"Strength",kind:"strength",short:"Light resistance + mobility",steps:["Light resistance work, nothing to failure","Mobility: hips, calves, hamstrings"]},
+  {id:"w2t",day:1,type:"Tempo",short:"3 × 6 min @ 5:10–5:25",steps:[WU,"3 × 6 min @ <b>5:10–5:25</b>",REC,CD],
+   b:{type:"Steady run",short:"25 min steady @ 5:45–6:05",steps:[WU,"25 min @ <b>5:45–6:05</b>, smooth and controlled",CD]}},
+  {id:"w2e",day:2,type:"Easy run",short:"35 min easy @ 6:30–7:10",steps:["35 min @ "+E+", conversational effort"]},
+  {id:"w2i",day:4,type:"Intervals",short:"3 × 800 m @ 4:50–5:05",steps:[WU,"3 × 800 m @ <b>4:50–5:05</b>",REC,CD],
+   b:{short:"4 × 2 min hard @ 4:50–5:05",steps:[WU,"4 × 2 min @ <b>4:50–5:05</b>",REC,CD]}},
+  {id:"w2l",day:6,type:"Long run",km:15,short:"15 km @ 6:25–7:00",steps:["15 km @ <b>6:25–7:00</b>, easy conversational effort"],
+   b:{km:12,short:"12 km @ 6:25–7:00",steps:["12 km @ <b>6:25–7:00</b>, easy conversational effort"]}}]},
+ {w:3,title:"Recover & sharpen",s:[
+  {id:"w3x",day:0,type:"Mobility",kind:"strength",short:"Mobility + stability work",steps:["Mobility: hips, ankles, thoracic spine","Stability: single-leg balance, glute bridges, side planks"]},
+  {id:"w3m",day:1,type:"Medium-long run",km:12,short:"12 km @ 6:25–7:00",steps:["12 km @ <b>6:25–7:00</b>","Focus on recovery, keep it relaxed"],
+   b:{km:10,short:"10 km @ 6:25–7:00",steps:["10 km @ <b>6:25–7:00</b>","Focus on recovery, keep it relaxed"]}},
+  {id:"w3e",day:2,type:"Easy run",short:"30 min easy @ 6:30–7:10",steps:["30 min @ "+E+", conversational effort"]},
+  {id:"w3t",day:3,type:"Tempo",short:"20 min @ 5:10–5:25",steps:[WU,"20 min continuous @ <b>5:10–5:25</b>",CD],
+   b:{short:"15 min @ 5:10–5:25",steps:[WU,"15 min continuous @ <b>5:10–5:25</b>",CD]}},
+  {id:"w3c",day:4,type:"Core + stretch",kind:"strength",short:"Core + stretch session",steps:["Core: planks, dead bugs, bird dogs","Full stretch, 10–15 min"]},
+  {id:"w3l",day:6,type:"Long run",km:10,short:"10 km @ 6:25–7:00",steps:["10 km @ <b>6:25–7:00</b>","Prepare body & mind: practise race-day breakfast and kit"],
+   b:{km:8,short:"8 km @ 6:25–7:00",steps:["8 km @ <b>6:25–7:00</b>","Prepare body & mind: practise race-day breakfast and kit"]}}]},
+ {w:4,title:"Race week",s:[
+  {id:"w4e",day:1,type:"Easy run + strides",short:"20 min easy + 4 strides",steps:["20 min @ "+E,"Then 4 × 20 s relaxed strides, full walk back between"]},
+  {id:"w4i",day:3,type:"Sharpener",short:"3 × 2 min @ 5:05–5:20",steps:["Warm-up: 10 min easy","3 × 2 min @ <b>5:05–5:20</b>, quick but not straining",REC,"Cool-down: 5–10 min easy"],
+   b:{type:"Easy run",short:"15 min easy @ 6:30–7:10",steps:["15 min @ "+E+", just loosen the legs"]}},
+  {id:"race",day:6,type:"Race day — 21.1 km",km:21.1,race:true,short:"Target ≈ 1:55:00",steps:["Km 1–3 @ <b>5:35</b>","Km 4–18 @ <b>5:25</b>","Km 19–21.1 @ <b>5:15–5:25</b> if still strong","Target finish ≈ <b>1:55:00</b>"]}]}
+];
+PLAN.forEach(w=>w.s.forEach(s=>{s.w=w.w}));
+const ALL = PLAN.flatMap(w=>w.s);
+const KEY="half-tracker-v1";
+const defStart="2026-11-02";
+let st = load();
+function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.logs)return j}catch(e){}return{start:defStart,race:null,theme:"auto",level:"I",logs:{}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const fmtDate=d=>d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+function dateOf(s){if(s.race&&st.race)return parse(st.race);const d=parse(st.start);d.setDate(d.getDate()+(s.w-1)*7+s.day);return d}
+function toSec(t){if(!t)return null;const p=String(t).trim().split(":").map(Number);if(p.some(isNaN))return null;return p.reduce((a,b)=>a*60+b,0)}
+function fmtSec(s){s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${pad(m)}:${pad(x)}`:`${m}:${pad(x)}`}
+function withKmh(txt){return String(txt).replace(/(^|[^\d:])(\d):([0-5]\d)(?:–(\d):([0-5]\d))?(?![\d:])/g,(m,pre,a,b,c,d)=>{const p1=+a*60+ +b;let out=`${a}:${b}`,k;if(c){const p2=+c*60+ +d;out+=`–${c}:${d}`;k=`${(3600/Math.max(p1,p2)).toFixed(1)}–${(3600/Math.min(p1,p2)).toFixed(1)}`}else k=(3600/p1).toFixed(1);return `${pre}${out} <span class="kmh">(${k} km/h)</span>`})}
+function paceOf(l){const t=toSec(l.time),k=parseFloat(l.km);return t&&k>0?t/k:null}
+const V=s=>(st.level||"I")==="B"&&s.b?{...s,...s.b}:s;
+const isRun=s=>s.kind!=="strength";
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+
+function applyTheme(){if(st.theme==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",st.theme);
+  document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===st.theme))}
+
+function render(){
+  const t=today().getTime();
+  const done=ALL.filter(s=>st.logs[s.id]?.status==="done");
+  $("#doneCount").innerHTML=`${done.length}<small>/ ${ALL.length}</small>`;
+  $("#bar").style.width=(done.length/ALL.length*100)+"%";
+  const km=done.reduce((a,s)=>a+(parseFloat(st.logs[s.id].km)||0),0);
+  $("#sKm").textContent=km.toFixed(1);
+  const longest=Math.max(0,...done.map(s=>parseFloat(st.logs[s.id].km)||0));
+  $("#sLong").textContent=longest?longest.toFixed(1)+" km":"–";
+  const rd=dateOf(ALL[ALL.length-1]);
+  $("#raceDate").textContent=fmtDate(rd);
+  const days=Math.round((rd-today())/864e5);
+  $("#sDays").textContent=days>=0?days:"done";
+
+  const nxt=ALL.find(s=>!st.logs[s.id]?.status);
+  const n=$("#next");
+  if(nxt){const d=dateOf(nxt);const v=V(nxt);const rel=nxt.race?fmtDate(d):d.getTime()===t?"Suggested today":"Suggested "+fmtDate(d);
+    n.style.display="";n.innerHTML=`<div class="k">Next up · Week ${nxt.w} · ${rel}</div><div class="t">${v.type}</div><div class="d">${withKmh(v.short)}</div>`;n.onclick=()=>openSheet(nxt.id)}
+  else n.style.display="none";
+
+  $("#weeks").innerHTML=PLAN.map(w=>{
+    const wd=w.s.filter(s=>st.logs[s.id]?.status==="done").length;
+    return `<div class="week"><h2>Week ${w.w} · <em>${w.title}</em><span>${wd}/${w.s.length}</span></h2>`+
+    w.s.map(s0=>{const s=V(s0);const l=st.logs[s.id]||{};const d=dateOf(s);const p=paceOf(l);
+      const cls=[l.status,d.getTime()===t&&!l.status?"today":""].join(" ");
+      const pain=l.pain==="sharp"?`<i class="flag" style="background:var(--bad)"></i>`:l.pain==="mild"?`<i class="flag" style="background:var(--warn)"></i>`:"";
+      const right=l.status==="done"?`<b class="mono">${l.km?l.km+" km":"✓"}</b>${p?fmtSec(p)+"/km":l.time?l.time:l.date?fmtDate(parse(l.date)):""}`:l.status==="skipped"?"Skipped":fmtDate(d);
+      return `<div class="sess ${cls}" data-id="${s.id}"><div class="dot">${l.status==="done"?"✓":l.status==="skipped"?"–":""}</div>
+      <div class="body"><div class="t">${s.type}${pain}</div><div class="s">${withKmh(s.short)}</div></div><div class="r">${right}</div></div>`}).join("")+`</div>`}).join("");
+  document.querySelectorAll(".sess").forEach(e=>e.onclick=()=>openSheet(e.dataset.id));
+}
+
+let cur=null;
+function openSheet(id){
+  const s=V(ALL.find(x=>x.id===id));const run=isRun(s);cur={...(st.logs[id]||{})};
+  if(!cur.km&&s.km&&!cur.status)cur.km="";
+  const body=$("#sheetBody");
+  body.innerHTML=`<div class="grab"></div>
+  <h3>${s.type}</h3><div class="sub">Week ${s.w} · ${s.race?"Race day":"suggested"} ${fmtDate(dateOf(s))}</div>
+  <ul class="steps">${s.steps.map(x=>`<li>${withKmh(x)}</li>`).join("")}</ul>
+  <div ${run?"":'style="display:none"'}>
+  <div class="row">
+    <div><label class="f">Distance (km)</label><input id="fKm" inputmode="decimal" placeholder="${s.km||"e.g. 7.5"}" value="${cur.km||""}"></div>
+    <div><label class="f">Time (h:mm:ss)</label><input id="fTime" inputmode="numeric" placeholder="${s.race?"1:55:00":"45:00"}" value="${cur.time||""}"></div>
+  </div>
+  <div class="pace" id="fPace"></div>
+  </div>
+  <label class="f">Date done</label>
+  <input type="date" id="fDate" value="${cur.date||iso(new Date())}">
+  <label class="f">How hard did it feel? (1 easy – 5 max)</label>
+  <div class="seg" id="fRpe">${[1,2,3,4,5].map(n=>`<button data-v="${n}">${n}</button>`).join("")}</div>
+  <label class="f">Any pain?</label>
+  <div class="seg" id="fPain"><button data-v="none">None</button><button data-v="mild">Mild</button><button data-v="sharp">Sharp</button></div>
+  <div class="warnbox painwarn" id="painWarn">Sharp pain means stop. Don't run the next sessions until it's assessed and you can walk normally without pain.</div>
+  <label class="f">Notes</label>
+  <textarea id="fNotes" placeholder="${run?"Splits, weather, how the legs felt…":"What you did, how it felt…"}">${cur.notes||""}</textarea>
+  <div class="actions">
+    <button class="btn primary" id="saveDone">${cur.status==="done"?"Update":"Mark done"}</button>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" id="skipBtn">${cur.status==="skipped"?"Unskip":"Skip"}</button>
+    ${cur.status?`<button class="btn ghost" id="clearBtn">Clear log</button>`:""}
+    <button class="btn ghost" id="closeBtn">Close</button>
+  </div>`;
+  const upd=()=>{const p=paceOf({km:$("#fKm").value,time:$("#fTime").value});
+    let txt=p?`Avg pace <b class="mono">${fmtSec(p)}/km</b> · <b class="mono">${(3600/p).toFixed(1)} km/h</b>`:"Enter distance and time to see pace";
+    if(p&&s.race){txt+=` · ${toSec($("#fTime").value)<=115*60?"🎯 goal hit":"goal 1:55:00"}`}
+    $("#fPace").innerHTML=txt};
+  $("#fKm").oninput=upd;$("#fTime").oninput=upd;upd();
+  const seg=(sel,key)=>{const bs=document.querySelectorAll(sel+" button");
+    const paint=()=>{bs.forEach(b=>b.classList.toggle("on",String(cur[key])===b.dataset.v));if(key==="pain")$("#painWarn").classList.toggle("on",cur.pain==="sharp")};
+    bs.forEach(b=>b.onclick=()=>{cur[key]=String(cur[key])===b.dataset.v?null:b.dataset.v;paint()});paint()};
+  seg("#fRpe","rpe");seg("#fPain","pain");
+  const collect=()=>({...cur,km:$("#fKm").value.trim(),time:$("#fTime").value.trim(),notes:$("#fNotes").value.trim(),date:$("#fDate").value});
+  $("#saveDone").onclick=()=>{st.logs[id]={...collect(),status:"done",at:Date.now()};save();closeSheet();render()};
+  $("#skipBtn").onclick=()=>{if(cur.status==="skipped")delete st.logs[id];else st.logs[id]={...collect(),status:"skipped"};save();closeSheet();render()};
+  if($("#clearBtn"))$("#clearBtn").onclick=()=>{if(confirm("Clear this session's log?")){delete st.logs[id];save();closeSheet();render()}};
+  $("#closeBtn").onclick=closeSheet;
+  $("#scrim").classList.add("on");$("#sheet").classList.add("on");$("#sheet").scrollTop=0;
+}
+function closeSheet(){$("#scrim").classList.remove("on");$("#sheet").classList.remove("on")}
+$("#scrim").onclick=closeSheet;
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+b.dataset.p));window.scrollTo(0,0)});
+
+$("#startInput").value=st.start;
+$("#raceInput").value=st.race||iso(dateOf({w:4,day:6}));
+$("#startInput").onchange=e=>{if(!e.target.value)return;st.start=e.target.value;if(!st.raceCustom){st.race=null;$("#raceInput").value=iso(dateOf({w:4,day:6}))}save();render()};
+$("#raceInput").onchange=e=>{st.race=e.target.value||null;st.raceCustom=!!e.target.value;save();render()};
+document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{st.theme=b.dataset.v;save();applyTheme()});
+const paintLevel=()=>document.querySelectorAll("#levelSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===(st.level||"I")));
+document.querySelectorAll("#levelSeg button").forEach(b=>b.onclick=()=>{st.level=b.dataset.v;save();paintLevel();render()});paintLevel();
+$("#exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(st,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`half-tracker-${iso(new Date())}.json`;a.click()};
+$("#importBtn").onclick=()=>$("#importFile").click();
+$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.logs)throw 0;st=j;save();applyTheme();paintLevel();$("#startInput").value=st.start;render();alert("Imported.")}catch(x){alert("That file isn't a tracker backup.")}})};
+$("#resetBtn").onclick=()=>{if(confirm("Delete all session logs?")){st.logs={};save();render()}};
+
+document.querySelectorAll("#p-guide td.mono").forEach(td=>{td.innerHTML=withKmh(td.textContent)});
+$("#cPace").oninput=e=>{const t=toSec(e.target.value);$("#cKmh").value=t&&e.target.value.includes(":")?(3600/t).toFixed(1):""};
+$("#cKmh").oninput=e=>{const k=parseFloat(e.target.value);$("#cPace").value=k>0?fmtSec(3600/k):""};
+applyTheme();render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
